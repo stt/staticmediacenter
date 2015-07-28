@@ -2,28 +2,36 @@
 <html >
   <head>
     <meta charset="UTF-8">
-    <title></title>
-    <meta name="referrer" content="never">
+    <meta name="description" content="Static/extensible HTML5 media center">
+    <meta name="keywords" content="Movies,Videos,Media,Stream,Player,Free,Javascript">
+    <meta name="author" content="Finnish Moomin">
+    <meta name="revised" content="stu, 2015-07-26">
     
+    <title>Static media center</title>
     
-    
-        <link rel="stylesheet" href="style.css">
-
-    
-    
-    
+    <link rel="stylesheet" href="style.css">
   </head>
-
   <body>
 
-    <div id="player"></div>
+    <div id="bglayer">
+    </div>
+    <div id="plrcontainer">
+      <button id="close">x</button>
+      <div id="player"></div>
+      <div class="info"></div>
+    </div>
+
+    <div class="header">
+      <div class="center">
+        <input id="title" type="text" placeholder="Search">
+      </div>
+    </div>
+
+    <div id="content" class="center">
+    </div>
+
     <script src='http://cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js'></script>
-<script src='http://cdn.rawgit.com/morr/jquery.appear/master/jquery.appear.js'></script>
-
-        <script src="index.js"></script>
-
-    
-    
-    
+    <script src='http://cdn.rawgit.com/morr/jquery.appear/master/jquery.appear.js'></script>
+    <script src="index.js"></script>
   </body>
 </html>

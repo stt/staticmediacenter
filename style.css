@@ -1,27 +1,97 @@
 html, body {
   margin: 0;
+  background-color: brown;
+  font-family: sans-serif;
 }
 .vid {
   margin: 10px;
   width: 100px;
-  height: 150px;
+  min-height: 150px;
   float: left;
   background-color: gray;
   background-size: cover;
   background-repeat: no-repeat;
   color: white;
-  font-family: sans-serif;
   text-align: center;
+}
+.vid .title {
+  display: block;
+  line-height: 1;
+  height: 2em;
+  overflow: hidden;
+  /*
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  */
 }
 .vid img {
   width: 90%;
 }
 
-#player {
-  position: fixed;
-  display: none;
+.right {
+  float: right;
+}
+.center {
+  width: 95%;
+  margin: 2px auto;
+  text-align: center;
+}
+
+#plrcontainer button {
+  background-color: black;
+  color: gray;
+}
+#close {
+  position: absolute;
+  right: 0;
+  margin: 5px;
+}
+#plrcontainer, #bglayer {
   width: 100%;
   height: 100%;
+  position: fixed;
+  display: none;
+}
+#bglayer {
   opacity: .8;
   background-color: black;
+}
+#plrcontainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.info {
+  color: wheat;
+  width: 250px;
+  word-wrap: break-word;
+  margin: 30px;
+}
+.info ul {
+  padding: 0;
+}
+.info .heading {
+  border-bottom: 1px solid white;
+  width: 100%;
+  display: block;
+  text-align: center;
+  font-size: small;
+}
+
+#srcs a {
+  cursor: pointer;
+}
+
+.button {
+  font-size: small;
+  text-decoration: none;
+  background-color: #eee;
+  color: #333;
+  padding: 2px 6px 2px 6px;
+  border-top: 1px solid #ccc;
+  border-right: 1px solid #333;
+  border-bottom: 1px solid #333;
+  border-left: 1px solid #ccc;
 }
