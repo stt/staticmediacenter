@@ -1,0 +1,27 @@
+html, body {
+  margin: 0;
+}
+.vid {
+  margin: 10px;
+  width: 100px;
+  height: 150px;
+  float: left;
+  background-color: gray;
+  background-size: cover;
+  background-repeat: no-repeat;
+  color: white;
+  font-family: sans-serif;
+  text-align: center;
+}
+.vid img {
+  width: 90%;
+}
+
+#player {
+  position: fixed;
+  display: none;
+  width: 100%;
+  height: 100%;
+  opacity: .8;
+  background-color: black;
+}
