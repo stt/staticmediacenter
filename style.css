@@ -13,6 +13,7 @@ html, body {
   background-repeat: no-repeat;
   color: white;
   text-align: center;
+  position: relative;
 }
 .vid .title {
   display: block;
@@ -29,14 +30,58 @@ html, body {
   width: 90%;
 }
 
+.selected { background-color: yellow; }
+
+.header:before {
+    content: "SMC |";
+    float: left;
+    text-shadow: 1px 1px white;
+    margin: 0 3px;
+}
+
+.header {
+  margin: 0 auto;
+  position: fixed;
+  background-color: rgba(250,10,10,.7);
+  z-index: 50;
+  width: 95%;
+  border-radius: 15px;
+  padding: 5px;
+  /* gotcha: margin auto works for fixed elements too if left and right are set */
+  left: 0;
+  right: 0;
+  top: 4px;
+}
+
+.header input[type=checkbox] {
+  vertical-align: middle;
+}
+
+.header button, .header input, .header select, .header option, .header .button {
+  background-color: rgba(250,10,10,.1);
+  color: white;
+  font-weight: bold;
+}
+
+#content {
+  margin-top: 32px;
+}
+
+.left {
+  float: left;
+  margin: 0 2px;
+}
 .right {
   float: right;
+  margin: 0 2px;
 }
 .center {
   width: 95%;
-  margin: 2px auto;
+  margin: 0 auto;
   text-align: center;
 }
+
+label, .header span { color: white; font-size: small; }
 
 #plrcontainer button {
   background-color: black;
@@ -51,13 +96,17 @@ html, body {
   width: 100%;
   height: 100%;
   position: fixed;
+  left: 0;
+  top: 0;
   display: none;
 }
 #bglayer {
+  z-index: 90;
   opacity: .8;
   background-color: black;
 }
 #plrcontainer {
+  z-index: 99;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -85,6 +134,7 @@ html, body {
 }
 
 .button {
+  cursor: pointer;
   font-size: small;
   text-decoration: none;
   background-color: #eee;

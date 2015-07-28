@@ -1,4 +1,5 @@
-var _disabledmods = getLocalStorageItem('disabledmods', []);
+var _disabledmods = []; //getLocalStorageItem('disabledmods', []);
+var _mods = _smc.getMods();
 
 // gets registered too late, we'd need to load mods synchronously for this to work
 $(window).on('scriptload', function(ev, args) {
@@ -6,6 +7,12 @@ $(window).on('scriptload', function(ev, args) {
   var pos = _disabledmods.indexOf(args[0]);
   if(pos >= 0) ev.preventDefault();
 });
+
+$('<style>').append(
+  '.mods, #togmod, #delmod { display: none; }'+
+  '.mods button { background-color: #bbb; }'+
+  '#mod { width: 100px; }'
+  ).appendTo('head');
 
 $('.header').prepend(
   '<a class="right mods-btn button">mods</a>'+
@@ -16,10 +23,6 @@ $('.header').prepend(
     //<button id="togmod"></button>
   '</div>'
 );
-
-$('style:eq(0)').append(
-  '.mods, #togmod, #delmod { display: none; }'+
-  '.mods button { background-color: #bbb; }');
 
 function saveAndRefreshMods() {
   localStorage.setItem("mods", JSON.stringify(_mods));
@@ -70,20 +73,30 @@ $('#togmod').on('click', function() {
   updateModButtons();
 });
 */
+
+function checkUrl(url, cb) {
+  $.ajax({
+    url: url,
+    type: 'HEAD',
+    complete: function(xhr) {
+      cb((xhr.status == 200 ? null : xhr.statusText), xhr);
+      //xhr.getResponseHeader('Content-Length')
+    }
+  });
+}
+
 $('#addmod').on('click', function() {
   if(!trigger("modadd", this)) return;
   var name = $('#mod').val().trim();
   if(name) {
     var url = prompt("Mod url:");
     if(url != null) {
-      try {
-        new URL(url);
+      checkUrl(url, function(err, xhr) {
+        if(err) return alert(err);
         _mods[name] = url;
-        loadScript(name, url);
+        _smc.loadScript(name, url);
         saveAndRefreshMods();
-      } catch(e) {
-        alert(e);
-      }
+      });
     }
   }
 });
