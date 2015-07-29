@@ -91,6 +91,7 @@ var _smc = (function(){
     'loadinfo': exampleMod,
     'remember': 'remember.mod.js',
     'filter': 'filter.mod.js',
+    'movs720p': 'movs720p.mod.js',
     'movs1080p': 'movs1080p.mod.js',
     'seen': 'seen.mod.js',
     'gpad': 'gpad.mod.js',

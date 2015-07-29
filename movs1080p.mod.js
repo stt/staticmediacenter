@@ -7,7 +7,7 @@
 (function() {
 
   var _config = getLocalStorageItem('movs1080p_config', {
-    moviesUrl: prompt("Movie src:", "https://cdn.rawgit.com/anonymous/"),
+    moviesUrl: prompt("1080p movie src:", "https://cdn.rawgit.com/anonymous/"),
     moviesMetaUrl: "movies-1080p-meta.json",
     coverUrlTpl: 'http://example.com/imdb/cache/%s.jpg',
   });
@@ -37,7 +37,7 @@
     if(_loaded || name != "1080p") return;
 
     _smc.checkUrl(_config.moviesUrl, function(err) {
-      if(err) return alert(err);
+      if(err) return alert('1080p: ' + err);
       _loaded = true;
 
       $.getJSON(_config.moviesUrl, function(data) {

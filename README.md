@@ -3,9 +3,9 @@
 This is a lightweight media library that loads iframes from video streaming sites.
 Only [one static html file](index.html) required. Customizable through external modules.
 
-To get some actual content in the media center it depends on a module to load the content (for example from JSON files stored locally or remotely in gist, pastebin etc.).
+To get some actual content in the media center it depends on something to call `_smc.addSource('src')` and then `_smc.addVideo({'title':'..', 'img':'..'}, 'src')`.
 
-Included are a couple example modules for content loading, and the following modules to provide additional functionality:
+Included are a couple example modules for content loading ([720p.mod.js](720p.mod.js), [1080p.mod.js](1080p.mod.js)), and the following modules to provide additional functionality:
 
 mod            | description
 ---------------|------------
