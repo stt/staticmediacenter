@@ -1,7 +1,7 @@
 # Static media center
 
 This is a lightweight media library that loads iframes from video streaming sites.
-Only one static html file required. Customizable through external modules.
+Only [one static html file](index.html) required. Customizable through external modules.
 
 To get some actual content in the media center it depends on a module to load the content (for example from JSON files stored locally or remotely in gist, pastebin etc.).
 
