@@ -5,13 +5,12 @@
     <meta name="description" content="Static/extensible HTML5 media center">
     <meta name="keywords" content="Movies,Videos,Media,Stream,Player,Free,Javascript">
     <meta name="author" content="Finnish Moomin">
-    <meta name="revised" content="stu, 2015-07-26">
-    <!--some videostream iframes require referrer, megavideo
-    meta name="referrer" content="never"-->
+    <meta name="revised" content="stu, 2015-07-29">
+    <meta name="referrer" content="never">
     
     <title>Static media center</title>
     
-    <link rel="stylesheet" href="style.css?1438029494">
+    <link rel="stylesheet" href="style.css">
   </head>
   <body>
 
@@ -24,9 +23,28 @@
     </div>
 
     <div class="header">
+      <select id="src" class="left remember">
+        <option value="" disabled selected class="hidden">sources</option>
+      </select>
+      <div class="left filters hidden">
+        <label title="reverses all filters, so reverse(hide seen + scifi) = show seen + non-scifi">
+          <input type="checkbox" id="reverse" class="remember">
+          reverse
+        </label>
+      </div>
+      <div class="left sorters">
+        <select id="sortby" title="sort" class="remember">
+          <option value="" disabled selected class="hidden">sort</option>
+        </select>
+        <label><input type="checkbox" id="revsort" class="remember">reverse</label>
+      </div>
+      <div class="center loading hidden">
+        <progress></progress>
+        <span class="progresslabel"></span>
+      </div>
       <div class="center">
-        <input id="title" type="text" placeholder="Search">
-        <span class="srchinfo"></span>
+        <input id="title" type="text" placeholder="Search" class="remember">
+        <span class="filterinfo"></span>
       </div>
     </div>
 

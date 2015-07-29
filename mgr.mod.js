@@ -74,24 +74,13 @@ $('#togmod').on('click', function() {
 });
 */
 
-function checkUrl(url, cb) {
-  $.ajax({
-    url: url,
-    type: 'HEAD',
-    complete: function(xhr) {
-      cb((xhr.status == 200 ? null : xhr.statusText), xhr);
-      //xhr.getResponseHeader('Content-Length')
-    }
-  });
-}
-
 $('#addmod').on('click', function() {
   if(!trigger("modadd", this)) return;
   var name = $('#mod').val().trim();
   if(name) {
     var url = prompt("Mod url:");
     if(url != null) {
-      checkUrl(url, function(err, xhr) {
+      _smc.checkUrl(url, function(err, xhr) {
         if(err) return alert(err);
         _mods[name] = url;
         _smc.loadScript(name, url);

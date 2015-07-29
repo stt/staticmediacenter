@@ -3,10 +3,28 @@ html, body {
   background-color: brown;
   font-family: sans-serif;
 }
+
+.hidden { display: none; }
+.selected { background-color: yellow; }
+
+.loading {
+  position: fixed;
+  background-color: rgba(1,1,1,.4);
+}
+.progresslabel {
+  position: relative;
+  left: -150px;
+  color: #f00;
+  font-size: small;
+  font-weight: bold;
+  text-shadow: 1px 1px yellow;
+}
+
 .vid {
   margin: 10px;
   width: 100px;
-  min-height: 150px;
+  /* would be nice https://developer.mozilla.org/en-US/docs/Web/CSS/object-fit */
+  height: 170px;
   float: left;
   background-color: gray;
   background-size: cover;
@@ -30,13 +48,36 @@ html, body {
   width: 90%;
 }
 
-.selected { background-color: yellow; }
+.vid img.empty {
+  display: block;
+  margin: 0 5px;
+  width: 90px;
+  height: 133px;
+  background-repeat: no-repeat;
+  background-image: url(data:image/gif;base64,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);
+}
+
+.left {
+  float: left;
+  margin: 0 2px;
+}
+.right {
+  float: right;
+  margin: 0 2px;
+}
+.center {
+  width: 95%;
+  margin: 0 auto;
+  text-align: center;
+}
+
+label { color: white; font-size: small; }
 
 .header:before {
-    content: "SMC |";
-    float: left;
-    text-shadow: 1px 1px white;
-    margin: 0 3px;
+  content: "SMC |";
+  float: left;
+  text-shadow: 1px 1px white;
+  margin: 0 3px;
 }
 
 .header {
@@ -57,31 +98,36 @@ html, body {
   vertical-align: middle;
 }
 
+.filterinfo {
+  color: white;
+  margin: 0 3px;
+}
+
 .header button, .header input, .header select, .header option, .header .button {
   background-color: rgba(250,10,10,.1);
   color: white;
   font-weight: bold;
 }
 
+.filters:before {
+  content: "filters:";
+  float: left;
+  margin: 0 3px;
+  color: white;
+  font-style: italic;
+}
+
+.sorters:before {
+  content: "sorting:";
+  float: left;
+  margin: 0 3px;
+  color: white;
+  font-style: italic;
+}
+
 #content {
   margin-top: 32px;
 }
-
-.left {
-  float: left;
-  margin: 0 2px;
-}
-.right {
-  float: right;
-  margin: 0 2px;
-}
-.center {
-  width: 95%;
-  margin: 0 auto;
-  text-align: center;
-}
-
-label, .header span { color: white; font-size: small; }
 
 #plrcontainer button {
   background-color: black;
