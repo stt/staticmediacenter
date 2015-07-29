@@ -150,6 +150,7 @@ var _smc = (function(){
   function addVideo(opts, src) {
     if(!trigger("videoadd", opts)) return;
     if(!'imdb,title,img'.split(',').every(opts.hasOwnProperty, opts)) return false;
+    var imdb = opts.imdb;
     var div = $('<div class="vid">')
       .attr('data-img', opts.img)
       .attr('data-imdb-id', opts.imdb)
@@ -163,10 +164,10 @@ var _smc = (function(){
     }
 
     _srcs[src].push(div);
-    /*
-    if($('select#src').val() == src && document.querySelectorAll('.vid').length < _config.videoPageLimit) {
-      div.appendTo('#content');
-    }*/
+
+    if(location.hash && location.hash.indexOf(imdb) > 0) {
+      showVideo(div);
+    }
 
     return div;
   }
@@ -203,6 +204,7 @@ var _smc = (function(){
     if(!trigger("playerclose", this)) return;
     $('#bglayer,#plrcontainer').hide();
     $('#player iframe').remove();
+    location.hash = '';
   }
 
   var applyingFilters = false;

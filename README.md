@@ -17,3 +17,8 @@ mgr.mod.js     | Lists loaded mods in the UI and provides controls for removing 
 remember.mod.js | Stores and restores values from input elements that have class "remember".
 seen.mod.js     | Provides filtering for seen movies. Adds checkboxes to each video element and stores which videos user has checked in localStorage.
 
+## Setup
+
+After `git clone` run `grunt`. It combines css and js files from `src/` to `index.html`, copy that file along with chosen modules to a chosen host.
+
+Notice that if you open the media library to browser directly from local disk some videostreaming services might not work as they e.g. might require a Referrer header that wouldn't be present, so prefer using over http.
