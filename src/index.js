@@ -27,6 +27,24 @@ function getLocalStorageItem(key, def) {
   }
 }
 
+function getHash() {
+  var obj = {};
+  // not the best separators, historical reasons
+  location.hash.replace(/^#/, '')
+  .replace(/([^=,]+)=([^,]*)/g, function (str, key, value) {
+    obj[key] = value;
+  });
+  return obj;
+}
+function setHash(obj) {
+  var str = '';
+  $.each(obj, function(k,v) {
+    if(str) str += ',';
+    str += k+ '=' +v;
+  });
+  location.hash = str;
+}
+
 function trigger(evtname, state, callerguid) {
   var evt = $.Event(evtname);
   evt.callerguid = callerguid;
@@ -49,7 +67,7 @@ var _smc = (function(){
 
   // TODO: store _config as separate key-values
   var _config = getLocalStorageItem('config', {
-    frameTpl: '<iframe allowfullscreen frameborder="0" width="688" height="382" src="%s"></iframe>',
+    frameTpl: '<iframe scrolling="no" allowfullscreen frameborder="0" width="688" height="382" src="%s"></iframe>',
     srcPreferences: ['googlevideo.com', 'videomega.tv'],
     videoPageLimit: 100,
   });
@@ -165,6 +183,8 @@ var _smc = (function(){
 
     _srcs[src].push(div);
 
+    // don't assume too much about the syntax of hash, mods may
+    // also want to maintain some of their state there
     if(location.hash && location.hash.indexOf(imdb) > 0) {
       showVideo(div);
     }
@@ -172,30 +192,45 @@ var _smc = (function(){
     return div;
   }
 
-  function showVideo(ele) {
-    if(!trigger("playeropen", ele)) return;
-    var imdbid = ele.data('imdb-id');
-    location.hash = 'vid-' + imdbid;
-    var srcs = ele.data('srcs').sort(sortVideoServices);
-
-    $('.info').html('<span class="heading">video sources</span><ul id="srcs">'+
-      srcs.map(function(e) {
-        return '<li class="button"><a data-href="'+ e +'">'+ e.split(/\/+/)[1] +'</a>';
-      }).join('')+
-      '</ul>'
-    );
-
-    document.title = $('.title', ele).text();
-
+  function openVideoFrame(url) {
+    $('#player iframe').remove();
     // HAX: wrapping iframe in iframe we can declare referrer=never on top frame,
     // use imdb imgs w/o ref and still send referrer to video sites that require it
     var frm = $(_config.frameTpl.replace(/%s/, '')).width(700).height(400).appendTo('#player')
     var doc = frm[0].contentWindow.document;
     doc.open();
     doc.close();
-    $("body", doc).append(_config.frameTpl.replace(/%s/, srcs[0]));
+    $("body", doc).append(_config.frameTpl.replace(/%s/, url));
 
-    //$('#player').html(_config.frameTpl.replace(/%s/, srcs[0]));
+    //$('#player').html(_config.frameTpl.replace(/%s/, url));
+  }
+
+  function getVideoInfoHtml(ele) {
+    var srcs = ele.data('srcs').sort(sortVideoServices);
+    return '<span class="heading">video sources</span><ul id="srcs">'+
+      srcs.map(function(e) {
+        return '<li class="button"><a data-href="'+ e +'">'+ e.split(/\/+/)[1] +'</a>';
+      }).join('')+
+      '</ul>';
+  }
+
+  function showVideo(ele) {
+    // mods might want to get video id from hash, so update that before event
+    var imdbid = ele.data('imdb-id');
+    location.hash = 'vid=' + imdbid;
+    if(!trigger("playeropen", ele)) return;
+
+    $('.selected').removeClass('selected');
+    $(ele).addClass('selected');
+
+    // call through public object incase it was overloaded
+    $('.info').html(_smc.getVideoInfoHtml(ele));
+
+    document.title = $('.title', ele).text();
+
+    // open first video source by default, if nobody stops us
+    var srcs = ele.data('srcs').sort(sortVideoServices);
+    if(trigger("videosrcchange", srcs[0])) openVideoFrame(srcs[0]);
 
     $('#bglayer,#plrcontainer').show();
   }
@@ -341,9 +376,8 @@ var _smc = (function(){
 
     // -- events
     $('.info').on('click', '#srcs a', function() {
-      if(!trigger("videosrcchange", this)) return;
-      var frm = _config.frameTpl.replace(/%s/, $(this).data('href'));
-      $('#player iframe').replaceWith(frm);
+      var url = $(this).data('href');
+      if(trigger("videosrcchange", url)) openVideoFrame(url);
     });
     
     $('#title').on('input', $.debounce(500, function(e) {
@@ -369,6 +403,9 @@ var _smc = (function(){
     });
 
     $('#close').on('click', closePlayer);
+    $(window).on('hashchange', function() {
+      if(!location.hash) closePlayer();
+    });
 
     $('body').on('click', 'div.vid', function() {
       showVideo($(this));
@@ -415,7 +452,8 @@ var _smc = (function(){
     addSource: addSource,
     applyFilters: applyFilters,
     refreshView: refreshView,
-    checkUrl: checkUrl
+    checkUrl: checkUrl,
+    getVideoInfoHtml: getVideoInfoHtml
   };
 
 })();
