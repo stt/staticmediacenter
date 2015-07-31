@@ -63,7 +63,7 @@ function sortByTitle(e1,e2) {
 // this is the global object available to mods
 var _smc = (function(){
 
-  var _version = '2015-07-29';
+  var _version = '2015-07-31';
 
   // TODO: store _config as separate key-values
   var _config = getLocalStorageItem('config', {
@@ -107,8 +107,10 @@ var _smc = (function(){
   var _mods = getLocalStorageItem('mods', {
     'modmgr': 'mgr.mod.js',
     'loadinfo': exampleMod,
+    'mobile': 'mobile.mod.js',
     'remember': 'remember.mod.js',
     'filter': 'filter.mod.js',
+    'filterexpired': 'filterexpired.mod.js',
     'movs720p': 'movs720p.mod.js',
     'movs1080p': 'movs1080p.mod.js',
     'seen': 'seen.mod.js',
@@ -358,6 +360,7 @@ var _smc = (function(){
   });
 
   var searchTerm;
+  // oddly firefox will register this as anonymous nameless function
   _filters.push(function filterSearch(e,i) {
     // init when necessary
     if(!searchTerm || i == 0) searchTerm = $('#title').val().replace('"', '\"');

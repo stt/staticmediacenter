@@ -10,12 +10,11 @@ $(window).on('scriptload', function(ev, args) {
 
 $('<style>').append(
   '.mods, #togmod, #delmod { display: none; }'+
-  '.mods button { background-color: #bbb; }'+
-  '#mod { width: 100px; }'
+  '.mods button { background-color: #bbb; }'
   ).appendTo('head');
 
 $('.header').prepend(
-  '<a class="right mods-btn button">mods</a>'+
+  '<button class="right mods-btn">mods</button>'+
   '<div class="right mods">'+
     '<input type="text" id="mod" value="" list="mods" placeholder="Mods">'+
     '<datalist id="mods"></datalist>'+

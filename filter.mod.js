@@ -62,7 +62,7 @@ function prepareControls(genres) {
             .prepend(chk)
             .appendTo(genremenu);
     });
-    $('<a id="genre-btn" class="button">Genres</a>').appendTo(filterdiv);
+    $('<button id="genre-btn">Genres</a>').appendTo(filterdiv);
     genremenu.appendTo(filterdiv);
 
     var allany = $('<select id="allany">');

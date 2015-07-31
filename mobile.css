@@ -1,0 +1,42 @@
+body.mobile .header {
+  margin: 0;
+}
+body.mobile .vid {
+  margin: 7px;
+}
+
+body.mobile label {
+  display: block;
+  clear: both;
+}
+
+body.mobile .header.closed {
+  width: 55px;
+}
+body.mobile .header.closed > * {
+  display: none !important;
+}
+
+body.mobile .header button, body.mobile .header input:not([type=checkbox]), body.mobile .header select, body.mobile .header option, body.mobile .header .button {
+  display: block;
+  width: 100%;
+}
+
+body.mobile .left, body.mobile .right {
+  margin: 10px 0;
+  width: 100%;
+}
+
+body.mobile .header.open ~ #bglayer {
+  display: block !important;
+}
+
+body.mobile .header.open {
+  width: 25%;
+  height: 100%;
+  z-index: 91;
+}
+body.mobile .header.open ~ #content {
+  transform: translateX(25%) perspective(100px) rotateY(20deg);
+  transition: all 600ms ease;
+}
