@@ -1,3 +1,5 @@
+(function() {
+
 $('<style>').append(
   '#filterby { overflow-y: auto; position: absolute; background-color: #ccc; }'+
   '#filterby label { display:block; color: black; font-size: medium; }'
@@ -95,3 +97,5 @@ $(window).on('videosmetaready', function(evt, data) {
         bindEvents();
     }
 });
+
+})();

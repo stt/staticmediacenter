@@ -1,3 +1,4 @@
+(function() {
 
 $('<style>').append(
   'input.seen { position:absolute; top:0; left:0; width:17px; height:17px; opacity:.7; }'
@@ -59,3 +60,5 @@ $('body').on('click', '.vid input.seen', function(ev) {
         _smc.applyFilters(filterSeen.name);
     }
 });
+
+})();

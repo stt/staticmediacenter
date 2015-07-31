@@ -262,7 +262,8 @@ var _smc = (function(){
 
     if(!namedFilter) _filtered = _srcs[srcname];
 
-    var callerguid = arguments.callee.caller.guid;
+    var callerguid = 0;
+    if(arguments.callee.caller) callerguid = arguments.callee.caller.guid;
     $('.filterinfo').text("");
 
     $.each(_filters, function(i,fn) {
