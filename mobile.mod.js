@@ -4,6 +4,10 @@
         '<link rel="stylesheet" href="mobile.css">'
     );
 
+    $(window).on('playeropen', function(evt, data) {
+        $('.header').removeClass('open').addClass('closed');
+    });
+
     $(window).resize(function () {
       if(window.innerWidth < 520) {
         $('body').addClass('mobile');
@@ -12,15 +16,13 @@
       }
     });
 
-    $(document).on('click', '.mobile #bglayer, .mobile .header', function() {
+    $(document).on('click', '.mobile #bglayer, .mobile .header', function(evt) {
+        // only react if it wasn't a child that was clicked
+        if(evt.target != this) return;
         $('.header').toggleClass('open').toggleClass('closed');
     });
 
     $(function() {
-        $('.mobile .header > *, .mobile #bglayer').click(function(evt) {
-            // don't close when clicking on inputs, or open video when bglayer clicked
-            evt.stopPropagation();
-        });
         $('.header').addClass('open');
         $(window).resize();
     });

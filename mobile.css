@@ -5,6 +5,14 @@ body.mobile .vid {
   margin: 7px;
 }
 
+body.mobile.video-mode #plrcontainer {
+  display: table !important;
+}
+body.mobile iframe {
+  width: 100% !important;
+  height: auto !important;
+}
+
 body.mobile label {
   display: block;
   clear: both;

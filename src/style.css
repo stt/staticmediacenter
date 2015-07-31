@@ -153,9 +153,15 @@ label { color: white; font-size: small; }
 }
 #plrcontainer {
   z-index: 99;
-  display: flex;
   justify-content: center;
   align-items: center;
+}
+
+body.video-mode #plrcontainer {
+  display: flex;
+}
+body.video-mode #bglayer {
+  display: block;
 }
 
 .info {
