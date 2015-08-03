@@ -136,6 +136,7 @@ label { color: white; font-size: small; }
 #close {
   position: absolute;
   right: 0;
+  top: 0;
   margin: 5px;
 }
 #plrcontainer, #bglayer {

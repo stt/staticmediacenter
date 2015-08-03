@@ -34,6 +34,9 @@ body.mobile .left, body.mobile .right {
   margin: 10px 0;
   width: 100%;
 }
+body.mobile .center {
+  clear: both;
+}
 
 body.mobile .header.open ~ #bglayer {
   display: block !important;

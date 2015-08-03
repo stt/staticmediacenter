@@ -23,7 +23,7 @@
     }
 
     function filterExpired(ele) {
-        var srcs = ele.data('srcs');
+        var srcs = ele.srcs;
         if(srcs.length == 1 && isExpired(srcs[0])) return false;
         return true;
     }

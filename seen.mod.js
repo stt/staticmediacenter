@@ -27,7 +27,7 @@ var _seen = getLocalStorageItem("seen", []);
 function filterSeen(e) {
     if(!$('#hideseen').prop('checked')) return true;
     //return !e.data('seen');
-    return _seen.indexOf(e.data('imdb-id')) < 0;
+    return _seen.indexOf(e.imdb) < 0;
 }
 
 _smc.addFilter(filterSeen);

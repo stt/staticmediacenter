@@ -53,10 +53,8 @@ function trigger(evtname, state, callerguid) {
 }
 
 function sortByTitle(e1,e2) {
-  var t1 = $('.title', e1).text();
-  var t2 = $('.title', e2).text();
-  if(t1 < t2) return -1;
-  if(t1 > t2) return 1;
+  if(e1.title < e2.title) return -1;
+  if(e1.title > e2.title) return 1;
   return 0;
 }
 
@@ -168,30 +166,16 @@ var _smc = (function(){
    required opts props: imdb, title, img
   */
   function addVideo(opts, src) {
-    if(!trigger("videoadd", opts)) return;
+    //if(!trigger("videoadd", opts)) return;  // a bit heavy?
     if(!'imdb,title,img'.split(',').every(opts.hasOwnProperty, opts)) return false;
     var imdb = opts.imdb;
-    var div = $('<div class="vid">')
-      .attr('data-img', opts.img)
-      .attr('data-imdb-id', opts.imdb)
-      .append('<span class="title" title="'+opts.title+'">'+opts.title+'</span>');
-    delete opts.img;
-    delete opts.imdb;
-    delete opts.title;
-    // some mods use data props such as: rating, genre, year
-    for(var p in opts) {
-      div.data(p, opts[p]);
-    }
-
-    _srcs[src].push(div);
+    _srcs[src].push(opts);
 
     // don't assume too much about the syntax of hash, mods may
     // also want to maintain some of their state there
     if(location.hash && location.hash.indexOf(imdb) > 0) {
-      showVideo(div);
+      showVideo($(getVideoElement(opts)));
     }
-
-    return div;
   }
 
   function openVideoFrame(url) {
@@ -245,8 +229,18 @@ var _smc = (function(){
     location.hash = '';
   }
 
+  $(window).on('progressing', function(evt, data) {
+    if(data === "") {
+      $('.loading').addClass('hidden');
+      $('.progresslabel').text("");
+    } else {
+      $('.progresslabel').text(data);
+      $('.loading').removeClass('hidden');
+      //console.log(evt);
+    }
+  });
+
   var applyingFilters = false;
-  // TODO: webworkers
   function applyFilters(namedFilter) {
     // should we queue a filtering rerun if one is requested during filtering?
     /* generally synchronous.. but http://stackoverflow.com/a/2734311
@@ -256,49 +250,77 @@ var _smc = (function(){
     }
     applyingFilters = true;
     */
+
     $('#content .vid').detach();  // GOTCHA, .remove() removes .data() X|
     var srcname = $('select#src').val();
     if(!srcname || !(srcname in _srcs)) return;
 
-    // doesn't actually display cause dom is waiting for us to finish
-    $('.loading').removeClass('hidden');
+    // initiate filter run so we can still update dom
+    setTimeout(function() {
 
-    if(!namedFilter) _filtered = _srcs[srcname];
+      var ds1 = Date.now();
+      _filtered = _srcs[srcname]; //if(!namedFilter) 
+      if(!_filtered.length) return;
 
-    var callerguid = 0;
-    if(arguments.callee.caller) callerguid = arguments.callee.caller.guid;
-    $('.filterinfo').text("");
+      var callerguid = 0;
+      if(arguments.callee.caller) callerguid = arguments.callee.caller.guid;
+      $('.filterinfo').text("");
+      trigger('progressing', "running filters");
 
-    $.each(_filters, function(i,fn) {
-      if(namedFilter && namedFilter != fn.name) return;
+      $.each(_filters, function(i,filt) {
 
-      if(!trigger("filter", fn, callerguid)) return;
+        var fn, ctx = {};
+        if(typeof(filt) == "function") {
+          fn = filt;
+        } else if(typeof(filt) == "object" && 'fn' in filt) {
+          fn = filt.fn;
+          if('ctx' in filt && typeof(filt.ctx) == "function") ctx = filt.ctx();
+        } else {
+          return;
+        }
 
-      $('.progresslabel').text(fn.name);
-      // NOTE jquery filter and js array filter have their args reversed X|
-      var had = _filtered.length;
-      var d1 = Date.now();
+        //if(namedFilter && namedFilter != fn.name) return;
+        if(!trigger("filter", fn, callerguid)) return;
 
-      _filtered = _filtered.filter(fn);
+        trigger('progressing', fn.name);
 
-      var d2 = Date.now(), diff = (d2-d1)/1000;
-      console.log("applying", fn.name, "took", diff,
-        "sec, it excluded", had - _filtered.length, "remaining", _filtered.length);
-    });
+        var had = _filtered.length;
+        var d1 = Date.now();
 
-    if($('#reverse').is(':checked')) {
-      _filtered = _srcs[srcname].filter(function(e) { return _filtered.indexOf(e) < 0; });
-      console.log("after reverse", _filtered.length, "remain");
-    }
+        /* TODO
+          - should run worker(s) in promise queue
+        vkthread.exec(_filtered.filter, [fn, ctx],
+          function(data){
+            console.log(arguments);
+            _filtered = data;
+          },
+          _filtered);
+        */
+        _filtered = _filtered.filter(fn.bind(ctx));
 
-    $('.loading').addClass('hidden');
-    if(!applySorter($('#sortby').val())) showMoreVideos();
-    // sorter might also detach and append so send the event after it
-    trigger("videosfiltered");
+        var d2 = Date.now(), diff = (d2-d1)/1000;
+        console.log("applying", fn.name, "took", diff,
+          "sec, it excluded", had - _filtered.length, "remaining", _filtered.length);
+
+      });
+
+      if($('#reverse').is(':checked')) {
+        _filtered = _srcs[srcname].filter(function(e) { return _filtered.indexOf(e) < 0; });
+        console.log("after reverse", _filtered.length, "remain");
+      }
+
+      $('.loading').addClass('hidden');
+      if(!applySorter($('#sortby').val())) showMoreVideos();
+      console.log("filters+sort:", (Date.now()-ds1)/1000, "sec");
+
+      // sorter might also detach and append so send the event after it
+      trigger("videosfiltered");
+
+    }, 10); // timeout
   }
 
-  function addFilter(fn, content) {
-    _filters.push(fn);
+  function addFilter(fn, content, ctxfn) {
+    _filters.push({fn: fn, ctx: ctxfn});
     if(content) {
       $('.filters').append(content).show();
       trigger("optionschange");
@@ -308,7 +330,7 @@ var _smc = (function(){
   function applySorter(name) {
     if(!(name in _sorters)) return false;
     var fn = _sorters[name];
-    _filtered.sort(fn.bind(_filtered));
+    _filtered.sort(fn);
 
     if($('#revsort').is(':checked')) {
       _filtered.reverse();
@@ -333,7 +355,30 @@ var _smc = (function(){
   function getSomeVids() {
     var vidcount = document.querySelectorAll('.vid').length;
     if(vidcount >= _filtered.length) return [];
-    return _filtered.slice(vidcount, vidcount + (_config.videoPageLimit||100));
+    return _filtered
+      .slice(vidcount, vidcount + (_config.videoPageLimit||100))
+      .map(function(e,i) {
+        return getVideoElement(e);
+      });
+  }
+
+  function getVideoElement(opts) {
+    var div = $('<div class="vid">');
+    div.data('src', $('select#src').val());
+
+    $.each(opts, function(k,v) {
+      if(k == 'img') div.attr('data-img', v);
+      else if(k == 'imdb') div.attr('data-imdb-id', v);
+      else if(k == 'title') div.append('<span class="title" title="'+v+'">'+v+'</span>');
+      else {
+        // some mods use data props such as: rating, genre, year
+        div.data(k, v);
+      }
+    });
+
+    // let's see if mods like the default
+    var ret = $(window).triggerHandler($.Event("getvideoelement"), div);
+    return (ret ? ret : div);
   }
 
   function refreshView() {
@@ -348,11 +393,8 @@ var _smc = (function(){
   }
 
   $(window).on('videosload', function() {
-    $('.loading').show();
-    $('.progresslabel').text("loading videos");
   });
   $(window).on('videosready', function() {
-    if($('.progresslabel').text() == "loading videos") $('.loading').hide();
     applyFilters();
   });
   $(window).on('videosfiltered', function() {
@@ -360,17 +402,22 @@ var _smc = (function(){
     refreshView();
   });
 
-  var searchTerm;
-  // oddly firefox will register this as anonymous nameless function
-  _filters.push(function filterSearch(e,i) {
-    // init when necessary
-    if(!searchTerm || i == 0) searchTerm = $('#title').val().replace('"', '\"');
-    if(!searchTerm) return true;
-    // todo test performance difference vs data-attribute
-    return e.has('.title:containsi("'+searchTerm+'")').length;
-  });
-
   $(function() {
+
+    _smc.addFilter(
+      // minifying makes this a nameless function
+      function filterSearch(e,i) {
+        if(!this.searchTerm) return true;
+        return e.title.toLowerCase().indexOf(this.searchTerm.toLowerCase()) >= 0;
+      },
+      // content
+      null,
+      // context (this)
+      function() {
+        return {searchTerm: $('#title').val().replace('"', '\"')};
+      }
+    );
+
     // KNOWN ISSUE:
     // Remember mod is tied to optionschange, if default sorter is
     // added before remember is listening then #src is not selected
@@ -386,6 +433,7 @@ var _smc = (function(){
     });
     
     $('#title').on('input', $.debounce(500, function(e) {
+      if(trigger("search", $('#title').val().replace('"', '\"'))) return;
       applyFilters();
     }));
 
@@ -400,11 +448,16 @@ var _smc = (function(){
     });
 
     $('select#src').change(function() { // $.debounce(2000, 
-      if(!trigger("srcchange", this.value)) return;
-      if(this.value in _srcs) {
-        // video provider likely still loading though
-        applyFilters();
-      }
+      trigger('progressing', "loading videos");
+      // queue the event that launches src loading, so
+      // our dom update becomes visible first
+      var src = this.value;
+      setTimeout(function() {
+        var d1 = Date.now();
+        trigger("srcchange", src);
+        console.log("video load took", (Date.now()-d1)/1000, "sec");
+        trigger('progressing', "");
+      }, 10);
     });
 
     $('#close').on('click', closePlayer);

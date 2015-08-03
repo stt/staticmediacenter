@@ -23,6 +23,14 @@
     return gen;
   }
 
+  $(window).on('getvideoelement', function(evt, vid) {
+    var meta = $(vid).data();
+    if('src' in meta && meta.src == '720p') {
+      vid.title = [meta.year, meta.rating, meta.genre].join(' - ');
+      return vid;
+    }
+  });
+
   $(window).on('srcchange', function(evt, name) {
     if(_loaded || name != "720p") return;
 
@@ -47,8 +55,6 @@
             rating: meta.r,
             genre: getGenres(meta.g)
           }, '720p');
-
-          vid.attr('title', [meta.y,meta.r,meta.g].join(' - '));
         }
 
         trigger("videosmetaready", {genres: genres});

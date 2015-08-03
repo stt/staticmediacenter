@@ -17,31 +17,31 @@ $(window).on('keyup', $.debounce(250, function(e) {
   }
 }));
 
-function getSelectedGenres() {
+function filterByGenre(e,i) {
+    // nothing searched don't hide anything
+    if(!this.selectedGenres.length) return true;
+    if(!e.genre) return false;
+    var gmatch = intersect(this.selectedGenres, e.genre);
+    return (this.requireAll ? gmatch.length == this.selectedGenres.length : gmatch.length);
+}
+
+// return value is bound as this when filterByGenre is called (so it can work without DOM)
+function getFilterContext() {
     var selectedGenres = [];
     $('#filterby input:checked').each(function(i,e) {
         selectedGenres.push(e.value);
     });
-    return selectedGenres;
-}
 
-var selectedGenres;
-function filterByGenre(e,i) {
-    // init when necessary
-    if(!selectedGenres || i == 0) selectedGenres = getSelectedGenres();
-    // nothing searched don't hide anything
-    if(!selectedGenres.length) return true;
-
-    var requireAll = $('#allany').val() == 'all';
-    if(!e.data('genre')) return false;
-    var gmatch = intersect(selectedGenres, e.data('genre'));
-    return (requireAll ? gmatch.length == selectedGenres.length : gmatch.length);
+    return {
+        requireAll: $('#allany').val() == 'all',
+        selectedGenres: selectedGenres
+    }
 }
 
 function getNumericSort(sort) {
     return function sortNumeric(e1,e2) {
-        var v1 = $(e1).data(sort);
-        var v2 = $(e2).data(sort);
+        var v1 = e1[sort];
+        var v2 = e2[sort];
         if(!v1) return 1;
         if(!v2) return -1;
         var ret = Number(v1) - Number(v2);
@@ -93,8 +93,14 @@ function bindEvents() {
 
 $(window).on('videosmetaready', function(evt, data) {
     if(!$('#filterby').length) {
-        _smc.addFilter(filterByGenre, prepareControls(data.genres));
+
+        _smc.addFilter(
+            filterByGenre, 
+            prepareControls(data.genres), 
+            getFilterContext);
+
         bindEvents();
+
     }
 });
 
