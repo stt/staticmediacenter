@@ -33,12 +33,6 @@ module.exports = function (grunt) {
          }
        }
     },
-    copy: {
-      main: {
-        src: 'src/index.html',
-        dest: 'build/index.html',
-      }
-    },
     comboall: {
       dist: {
         files: {

@@ -8,8 +8,9 @@
  */
 (function() {
 
+  var _name = '720p';
   var _config = getLocalStorageItem('movs720p_config', {
-    moviesUrl: prompt("720p movie src:", "https://cdn.rawgit.com/anonymous/"),
+    moviesUrl: prompt(_name+" movie src:", "https://cdn.rawgit.com/anonymous/"),
   });
   var genres = {};
 
@@ -25,17 +26,17 @@
 
   $(window).on('getvideoelement', function(evt, vid) {
     var meta = $(vid).data();
-    if('src' in meta && meta.src == '720p') {
-      vid.title = [meta.year, meta.rating, meta.genre].join(' - ');
+    if('src' in meta && meta.src == _name) {
+      vid.title = _name+': ' + [meta.year, meta.rating, meta.genre].join(' - ');
       return vid;
     }
   });
 
   $(window).on('srcchange', function(evt, name) {
-    if(_loaded || name != "720p") return;
+    if(_loaded || name != _name) return;
 
     _smc.checkUrl(_config.moviesUrl, function(err) {
-      if(err) return alert('720p: ' + err);
+      if(err) return alert(_name + ': ' + err);
       _loaded = true;
       
       $.getJSON(_config.moviesUrl, function(data) {
@@ -54,7 +55,7 @@
             year: meta.y,
             rating: meta.r,
             genre: getGenres(meta.g)
-          }, '720p');
+          }, _name);
         }
 
         trigger("videosmetaready", {genres: genres});
@@ -65,6 +66,6 @@
 
   });
 
-  _smc.addSource('720p');
+  _smc.addSource(_name);
 
 })();

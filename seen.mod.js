@@ -32,7 +32,7 @@ function filterSeen(e) {
 
 _smc.addFilter(filterSeen);
 
-$('#hideseen').click(_smc.applyFilters);
+$('#hideseen').click(_smc.refresh);
 
 $('body').on('click', '.vid input.seen', function(ev) {
     ev.stopPropagation();
@@ -52,12 +52,9 @@ $('body').on('click', '.vid input.seen', function(ev) {
     localStorage.setItem('seen', JSON.stringify(_seen));
 
     if($('#hideseen').prop('checked')) {
-        // full filter run overkill?
-        //vid.detach();
-        //_smc.refreshView();
-        // ..except that if _filtered is not updated, next slice
-        // of vids shown would likely contain the vid detached here
         _smc.applyFilters(filterSeen.name);
+        vid.detach();
+        _smc.refreshView();
     }
 });
 

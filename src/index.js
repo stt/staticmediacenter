@@ -61,7 +61,7 @@ function sortByTitle(e1,e2) {
 // this is the global object available to mods
 var _smc = (function(){
 
-  var _version = '2015-07-31';
+  var _version = '2015-08-03';
 
   // TODO: store _config as separate key-values
   var _config = getLocalStorageItem('config', {
@@ -182,7 +182,7 @@ var _smc = (function(){
     $('#player iframe').remove();
     // HAX: wrapping iframe in iframe we can declare referrer=never on top frame,
     // use imdb imgs w/o ref and still send referrer to video sites that require it
-    var frm = $(_config.frameTpl.replace(/%s/, '')).width(700).height(400).appendTo('#player')
+    var frm = $(_config.frameTpl.replace(/%s/, '')).width(700).height(400).appendTo('#player');
     var doc = frm[0].contentWindow.document;
     doc.open();
     doc.close();
@@ -193,10 +193,10 @@ var _smc = (function(){
   }
 
   function getVideoInfoHtml(ele) {
-    var srcs = ele.data('srcs').sort(sortVideoServices);
+    var srcs = ele.data('srcs').sort(_smc.sortVideoServices);
     return '<span class="heading">video sources</span><ul id="srcs">'+
       srcs.map(function(e) {
-        return '<li class="button"><a data-href="'+ e +'">'+ e.split(/\/+/)[1] +'</a>';
+        return '<li class="button" data-href="'+ e +'">'+ e.split(/\/+/)[1] +'</li>';
       }).join('')+
       '</ul>';
   }
@@ -216,7 +216,7 @@ var _smc = (function(){
     document.title = $('.title', ele).text();
 
     // open first video source by default, if nobody stops us
-    var srcs = ele.data('srcs').sort(sortVideoServices);
+    var srcs = ele.data('srcs').sort(_smc.sortVideoServices);
     if(trigger("videosrcchange", srcs[0])) openVideoFrame(srcs[0]);
 
     $('body').addClass('video-mode');
@@ -240,16 +240,8 @@ var _smc = (function(){
     }
   });
 
-  var applyingFilters = false;
   function applyFilters(namedFilter) {
-    // should we queue a filtering rerun if one is requested during filtering?
-    /* generally synchronous.. but http://stackoverflow.com/a/2734311
-    if(applyingFilters) {
-      console.log("filter req spam", arguments.callee.caller.name);
-      return false;
-    }
-    applyingFilters = true;
-    */
+    var deferred = $.Deferred();
 
     $('#content .vid').detach();  // GOTCHA, .remove() removes .data() X|
     var srcname = $('select#src').val();
@@ -258,7 +250,6 @@ var _smc = (function(){
     // initiate filter run so we can still update dom
     setTimeout(function() {
 
-      var ds1 = Date.now();
       _filtered = _srcs[srcname]; //if(!namedFilter) 
       if(!_filtered.length) return;
 
@@ -281,6 +272,8 @@ var _smc = (function(){
 
         //if(namedFilter && namedFilter != fn.name) return;
         if(!trigger("filter", fn, callerguid)) return;
+
+        deferred.notify();
 
         trigger('progressing', fn.name);
 
@@ -310,21 +303,13 @@ var _smc = (function(){
       }
 
       $('.loading').addClass('hidden');
-      if(!applySorter($('#sortby').val())) showMoreVideos();
-      console.log("filters+sort:", (Date.now()-ds1)/1000, "sec");
 
-      // sorter might also detach and append so send the event after it
       trigger("videosfiltered");
+      deferred.resolve();
 
     }, 10); // timeout
-  }
 
-  function addFilter(fn, content, ctxfn) {
-    _filters.push({fn: fn, ctx: ctxfn});
-    if(content) {
-      $('.filters').append(content).show();
-      trigger("optionschange");
-    }
+    return deferred.promise();
   }
 
   function applySorter(name) {
@@ -335,9 +320,29 @@ var _smc = (function(){
     if($('#revsort').is(':checked')) {
       _filtered.reverse();
     }
-    $('.vid').detach();
-    showMoreVideos();
-    refreshView();
+    trigger("videossorted");
+  }
+
+  function refresh() {
+    var ds1 = Date.now();
+
+    _smc.applyFilters().then(function() {
+      if(!applySorter($('#sortby').val())) showMoreVideos();
+      console.log("filters+sort:", (Date.now()-ds1)/1000, "sec");
+
+      $('.vid').detach();
+      showMoreVideos();
+      _smc.refreshView();
+    });
+
+  }
+
+  function addFilter(fn, content, ctxfn) {
+    _filters.push({fn: fn, ctx: ctxfn});
+    if(content) {
+      $('.filters').append(content).show();
+      trigger("optionschange");
+    }
   }
 
   function addSorter(name, fn) {
@@ -382,24 +387,18 @@ var _smc = (function(){
   }
 
   function refreshView() {
-    /* holycrap this was slow with 10k elements :)
-    var viscount = $('.vid').has(':visible').length;
-    */
     var srcname = $('select#src').val();
     if(srcname && srcname in _srcs) {
       $('.filterinfo').text(_filtered.length + " of " + _srcs[srcname].length);
     }
+    $('div.vid').appear();
     $('body').scroll();
   }
 
   $(window).on('videosload', function() {
   });
   $(window).on('videosready', function() {
-    applyFilters();
-  });
-  $(window).on('videosfiltered', function() {
-    $('div.vid').appear();
-    refreshView();
+    _smc.refresh();
   });
 
   $(function() {
@@ -427,24 +426,24 @@ var _smc = (function(){
     addSorter('title', sortByTitle);
 
     // -- events
-    $('.info').on('click', '#srcs a', function() {
+    $('.info').on('click', '#srcs *[data-href]', function() {
       var url = $(this).data('href');
       if(trigger("videosrcchange", url)) openVideoFrame(url);
     });
     
     $('#title').on('input', $.debounce(500, function(e) {
-      if(trigger("search", $('#title').val().replace('"', '\"'))) return;
-      applyFilters();
+      if(!trigger("search", $('#title').val().replace('"', '\"'))) return;
+      _smc.refresh();
     }));
 
     $('#revsort').change(function() {
-      applySorter($('#sortby').val());
+      _smc.applySorter($('#sortby').val());
     });
     $('#sortby').change(function() {
-      applySorter($(this).val());
+      _smc.applySorter($(this).val());
     });
     $('#reverse').change(function() {
-        applyFilters();
+      _smc.refresh();
     });
 
     $('select#src').change(function() { // $.debounce(2000, 
@@ -494,21 +493,23 @@ var _smc = (function(){
   });
 
   return {
-    addVideo: addVideo,
-    showVideo: showVideo,
-    closePlayer: closePlayer,
-    loadScript: loadScript,
-    getVersion: function() { return _version; },
-    getConfig: function() { return _config; },
-    getMods: function() { return _mods; },
-    //addFilter: _filters.push.bind(_filters),
     addFilter: addFilter,
     addSorter: addSorter,
     addSource: addSource,
+    addVideo: addVideo,
     applyFilters: applyFilters,
-    refreshView: refreshView,
+    applySorter: applySorter,
     checkUrl: checkUrl,
-    getVideoInfoHtml: getVideoInfoHtml
+    closePlayer: closePlayer,
+    getConfig: function() { return _config; },
+    getMods: function() { return _mods; },
+    getVersion: function() { return _version; },
+    getVideoInfoHtml: getVideoInfoHtml,
+    loadScript: loadScript,
+    showVideo: showVideo,
+    sortVideoServices: sortVideoServices,
+    refresh: refresh,
+    refreshView: refreshView
   };
 
 })();

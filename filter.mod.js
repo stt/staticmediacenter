@@ -55,7 +55,7 @@ function prepareControls(genres) {
     var filterdiv = $('<div class="left">');
 
     var genremenu = $('<div id="filterby">').width(150).height(250).hide();
-    $.each(genres, function(g,count) {
+    $.each(Object.keys(genres).sort(), function(i,g) {
         var chk = $('<input type=checkbox>').val(g);
         $('<label>')
             .text(g)
@@ -82,11 +82,11 @@ function bindEvents() {
         $('#filterby').toggle();
     });
 
-    $('#allany').change(_smc.applyFilters);
+    $('#allany').change(_smc.refresh);
 
     $('#filterby input').change(function() {
         $('#genre-btn').attr('title', $('#filterby input:checked').length+' selected');
-        _smc.applyFilters();
+        _smc.refresh();
     });
 }
 

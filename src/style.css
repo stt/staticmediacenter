@@ -5,7 +5,7 @@ html, body {
 }
 
 .hidden { display: none; }
-.selected { background-color: yellow; }
+.selected { background-color: #f66 !important; }
 
 .loading {
   position: fixed;

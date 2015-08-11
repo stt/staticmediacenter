@@ -1,6 +1,6 @@
 (function() {
 
-    function sortVideoServices(s1, s2) {
+    _smc.sortVideoServices = function(s1, s2) {
         for(var pi in _smc.getConfig().srcPreferences) {
           var pref = _smc.getConfig().srcPreferences[pi];
           if(s1.indexOf(pref) > 0 && !isExpired(s1)) return -1;
@@ -9,7 +9,7 @@
         if(s1 < s2) return -1;
         if(s1 > s2) return 1;
         return 0;
-    }
+    };
 
     function getGoogleVideoExpires(src) {
         var m = src.match(/expire=([0-9]*)/);
@@ -33,11 +33,10 @@
     $(window).on('videosrcchange', function(evt, src) {
         // don't default to expired video
         if(isExpired(src)) evt.preventDefault();
-        // for time being can't yet select a new default
     });
 
     _smc.getVideoInfoHtml = function getVideoInfoHtml(ele) {
-        var srcs = ele.data('srcs').sort(sortVideoServices);
+        var srcs = ele.data('srcs').sort(_smc.sortVideoServices);
         var exp = $('<div>');
 
         var ret = '<span class="heading">video sources</span>';
@@ -46,16 +45,18 @@
               srcs.map(function(e) {
                 var domain = e.split(/\/+/)[1];
                 if(isExpired(e)) {
-                    exp.append('<div class="button disabled"><a data-old-href="'+ e +'">'+ domain +'</div>');
+                    exp.append('<div class="button disabled" data-old-href="'+ e +'">'+ domain +'</div>');
                 } else {
-                    return '<li class="button"><a data-href="'+ e +'">'+ domain +'</a>';
+                    return '<li class="button" data-href="'+ e +'">'+ domain +'</li>';
                 }
               }).join('')
             )
             .prop('outerHTML');
 
-        ret += '<span class="heading">expired sources</span>';
-        ret += exp.html();
+        if(exp.children().length) {
+            ret += '<span class="heading">expired sources</span>';
+            ret += exp.html();
+        }
         return ret;
     };
 

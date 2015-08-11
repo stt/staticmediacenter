@@ -36,7 +36,7 @@ $('button#imdbrss').click(function() {
             }
         });
 
-        _smc.applyFilters();
+        _smc.refresh();
 
     }).error(function(err) {
         alert("error: " + JSON.stringify(err));
