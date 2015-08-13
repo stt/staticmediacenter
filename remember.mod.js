@@ -40,4 +40,5 @@
 
   });
 
+  trigger("modloaded", "remember.mod.js");
 })();

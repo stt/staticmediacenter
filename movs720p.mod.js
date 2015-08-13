@@ -68,4 +68,5 @@
 
   _smc.addSource(_name);
 
+  trigger("modloaded", _name+".mod.js");
 })();

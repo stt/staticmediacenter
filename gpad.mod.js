@@ -132,3 +132,5 @@ window.addEventListener("gamepaddisconnected", disconnecthandler);
 if (!haveEvents) {
   setInterval(scangamepads, 500);
 }
+
+trigger("modloaded", "gpad.mod.js");

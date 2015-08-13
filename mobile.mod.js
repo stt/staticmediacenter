@@ -26,4 +26,6 @@
         $('.header').addClass('open');
         $(window).resize();
     });
+
+    trigger("modloaded", "mobile.mod.js");
 })();

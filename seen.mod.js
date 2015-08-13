@@ -17,7 +17,6 @@ $(window).on('videoslisted', function(vids) {
     // could be more performant to iterate the collection that's smaller
     $.each(_seen, function(i,v) {
         $('.vid[data-imdb-id='+v+']')
-            .data('seen', true)
             .find('input.seen').prop('checked', true);
     });
 });
@@ -26,7 +25,6 @@ var _seen = getLocalStorageItem("seen", []);
 
 function filterSeen(e) {
     if(!$('#hideseen').prop('checked')) return true;
-    //return !e.data('seen');
     return _seen.indexOf(e.imdb) < 0;
 }
 
@@ -41,21 +39,21 @@ $('body').on('click', '.vid input.seen', function(ev) {
     var imdbid = vid.data('imdb-id');
     if($(this).prop('checked')) {
         _seen.push(imdbid);
-        vid.data('seen', true);
     } else {
         var pos = _seen.indexOf(imdbid);
         if(pos >= 0) {
             _seen.slice(pos, 1);
         }
-        vid.data('seen', false);
     }
     localStorage.setItem('seen', JSON.stringify(_seen));
 
     if($('#hideseen').prop('checked')) {
-        _smc.applyFilters(filterSeen.name);
-        vid.detach();
-        _smc.refreshView();
+        _smc.applyFilters(filterSeen.name).then(function() {
+            vid.detach();
+            _smc.refreshView();
+        });
     }
 });
 
+trigger("modloaded", "seen.mod.js");
 })();

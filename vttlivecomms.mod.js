@@ -41,4 +41,5 @@ $(window).on('getvideoreply', function(evt) {
     }
 });
 
+trigger("modloaded", "vttlivecomms.mod.js");
 })();

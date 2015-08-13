@@ -97,3 +97,5 @@ $('#delmod').on('click', function() {
     saveAndRefreshMods();
   }
 });
+
+trigger("modloaded", "mgr.mod.js");

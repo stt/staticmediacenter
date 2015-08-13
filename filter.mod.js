@@ -104,4 +104,5 @@ $(window).on('videosmetaready', function(evt, data) {
     }
 });
 
+trigger("modloaded", "filter.mod.js");
 })();

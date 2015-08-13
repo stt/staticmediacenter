@@ -43,4 +43,5 @@ $('button#imdbrss').click(function() {
     });
 });
 
+trigger("modloaded", "imdbrss.mod.js");
 })();
