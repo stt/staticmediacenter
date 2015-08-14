@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="description" content="Static/extensible HTML5 media center">
     <meta name="keywords" content="Movies,Videos,Media,Stream,Player,Free,Javascript">
-    <meta name="author" content="">
-    <meta name="revised" content="stu, 2015-07-29">
     <meta name="referrer" content="never">
     
     <title>Static media center</title>
@@ -18,7 +16,7 @@
       <select id="src" class="left remember">
         <option value="" disabled selected class="hidden">sources</option>
       </select>
-      <div class="left filters hidden">
+      <div class="left filters">
         <label title="reverses all filters, so reverse(hide seen + scifi) = show seen + non-scifi">
           <input type="checkbox" id="reverse" class="remember">
           reverse
@@ -35,16 +33,14 @@
         <span class="progresslabel"></span>
       </div>
       <div class="center">
-        <input id="title" type="text" placeholder="Search" class="remember">
+        <input id="title" accesskey="s" type="text" placeholder="Search" class="remember">
         <span class="filterinfo"></span>
       </div>
     </div>
 
-    <div id="bglayer">
-    </div>
-    <div id="plrcontainer">
-      <button id="close">x</button>
-      <div id="player"></div>
+    <div class="plrcontainer fullscreen hidden">
+      <button class="close">x</button>
+      <div class="player"></div>
       <div class="info"></div>
     </div>
 
@@ -53,6 +49,8 @@
 
     <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
     <script src="//cdn.rawgit.com/morr/jquery.appear/master/jquery.appear.js"></script>
+    <script src="vendor.js"></script>
+    <script src="util.js"></script>
     <script src="index.js"></script>
   </body>
 </html>

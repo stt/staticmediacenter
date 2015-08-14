@@ -35,29 +35,18 @@
         if(isExpired(src)) evt.preventDefault();
     });
 
-    _smc.getVideoInfoHtml = function getVideoInfoHtml(ele) {
-        var srcs = ele.data('srcs').sort(_smc.sortVideoServices);
-        var exp = $('<div>');
-
-        var ret = '<span class="heading">video sources</span>';
-
-        ret += $('<ul id="srcs">').append(
-              srcs.map(function(e) {
-                var domain = e.split(/\/+/)[1];
-                if(isExpired(e)) {
-                    exp.append('<div class="button disabled" data-old-href="'+ e +'">'+ domain +'</div>');
-                } else {
-                    return '<li class="button" data-href="'+ e +'">'+ domain +'</li>';
-                }
-              }).join('')
-            )
-            .prop('outerHTML');
-
-        if(exp.children().length) {
-            ret += '<span class="heading">expired sources</span>';
-            ret += exp.html();
+    $(window).on('playeropened', function(evt, plr) {
+        var hasExpire = false;
+        $('.srcs li', plr).each(function(i,e) {
+            if(isExpired($(e).data('href'))) {
+                $('.srcs', plr).after($(e).detach());
+                hasExpire = true;
+            }
+        });
+        if(hasExpire) {
+            $('.srcs', plr).after($('<span class="heading">expired sources</span>'));
         }
-        return ret;
-    };
+    });
 
+    trigger("modloaded", "filterexpired.mod.js");
 })();

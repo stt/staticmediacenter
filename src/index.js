@@ -1,67 +1,6 @@
-$.extend($.expr[':'], {
-  'containsi': function(elem, i, match, array) {
-    return (elem.textContent || elem.innerText || '').toLowerCase()
-      .indexOf((match[3] || "").toLowerCase()) >= 0;
-  }
-});
-/*
- * jQuery throttle / debounce - v1.1 - 3/7/2010
- * http://benalman.com/projects/jquery-throttle-debounce-plugin/
- * 
- * Copyright (c) 2010 "Cowboy" Ben Alman
- * Dual licensed under the MIT and GPL licenses.
- * http://benalman.com/about/license/
- */
-(function(b,c){var $=b.jQuery||b.Cowboy||(b.Cowboy={}),a;$.throttle=a=function(e,f,j,i){var h,d=0;if(typeof f!=="boolean"){i=j;j=f;f=c}function g(){var o=this,m=+new Date()-d,n=arguments;function l(){d=+new Date();j.apply(o,n)}function k(){h=c}if(i&&!h){l()}h&&clearTimeout(h);if(i===c&&m>e){l()}else{if(f!==true){h=setTimeout(i?k:l,i===c?e-m:e)}}}if($.guid){g.guid=j.guid=j.guid||$.guid++}return g};$.debounce=function(d,e,f){return f===c?a(d,e,false):a(d,f,e!==false)}})(this);
-
-function getLocalStorageItem(key, def) {
-  var val = localStorage.getItem(key);
-  if(val == null) {
-    localStorage.setItem(key, JSON.stringify(def));
-    return def;
-  }
-  try {
-    return (val ? JSON.parse(val) : val);
-  } catch(e) {
-    console.log(e);
-  }
-}
-
-function getHash() {
-  var obj = {};
-  // not the best separators, historical reasons
-  location.hash.replace(/^#/, '')
-  .replace(/([^=,]+)=([^,]*)/g, function (str, key, value) {
-    obj[key] = value;
-  });
-  return obj;
-}
-function setHash(obj) {
-  var str = '';
-  $.each(obj, function(k,v) {
-    if(str) str += ',';
-    str += k+ '=' +v;
-  });
-  location.hash = str;
-}
-
-function trigger(evtname, state, callerguid) {
-  var evt = $.Event(evtname);
-  evt.callerguid = callerguid;
-  $(window).trigger(evt, state);
-  return !evt.isDefaultPrevented();
-}
-
-function sortByTitle(e1,e2) {
-  if(e1.title < e2.title) return -1;
-  if(e1.title > e2.title) return 1;
-  return 0;
-}
-
-// this is the global object available to mods
 var _smc = (function(){
 
-  var _version = '2015-08-03';
+  var _version = '2015-08-13';
 
   // TODO: store _config as separate key-values
   var _config = getLocalStorageItem('config', {
@@ -71,14 +10,16 @@ var _smc = (function(){
   });
 
   // if you change this, remove mods from localStorage
-  var exampleMod = "data:text/javascript;base64," + btoa('console.log("info mod loaded");'+
-    '$(window).on("playeropen", function(ev, that) {'+
+  var exampleMod = "data:text/javascript;base64," + btoa(
+    '$(window).on("playeropened", function(ev, that) {'+
     '  $.getJSON("http://www.imdbapi.com/?i=" + $(that).data("imdb-id"), function(res) {'+
     '    var lst = $(\'<dl style="overflow-y: auto;">\').height(250);'+
     '    for(var i in res) lst.append("<dt>"+i+"</dt><dd>"+res[i]+"</dd>");'+
-    '    $(".info").append(lst);'+
+    '    $(".info", that).append(lst);'+
     '  });'+
-    '});');
+    '});'+
+    'trigger("modloaded", "loadinfo");'
+    );
 
   function sanitizeStorage() {
     var curVer = localStorage.getItem('version');
@@ -112,8 +53,9 @@ var _smc = (function(){
     'movs720p': 'movs720p.mod.js',
     'movs1080p': 'movs1080p.mod.js',
     'seen': 'seen.mod.js',
-    'gpad': 'gpad.mod.js',
+    'multi': 'multi.mod.js',
   });
+  var _modloadcount = 0;
 
   $.each(_mods, loadScript);
 
@@ -153,6 +95,20 @@ var _smc = (function(){
     });
   }
 
+  function addFilter(fn, content, ctxfn) {
+    _filters.push({fn: fn, ctx: ctxfn});
+    if(content) {
+      $('.filters').append(content);
+      trigger("optionschange");
+    }
+  }
+
+  function addSorter(name, fn) {
+    _sorters[name] = fn;
+    $('#sortby').append($('<option>').attr('value',name).text(name));
+    trigger("optionschange");
+  }
+
   function addSource(src) {
     if(src && !$('select#src').has('option[value='+src+']').length) {
       $('select#src').append($('<option>').attr('value',src).text(src));
@@ -170,42 +126,71 @@ var _smc = (function(){
     if(!'imdb,title,img'.split(',').every(opts.hasOwnProperty, opts)) return false;
     var imdb = opts.imdb;
     _srcs[src].push(opts);
-
-    // don't assume too much about the syntax of hash, mods may
-    // also want to maintain some of their state there
-    if(location.hash && location.hash.indexOf(imdb) > 0) {
-      showVideo($(getVideoElement(opts)));
-    }
   }
 
-  function openVideoFrame(url) {
-    $('#player iframe').remove();
-    // HAX: wrapping iframe in iframe we can declare referrer=never on top frame,
-    // use imdb imgs w/o ref and still send referrer to video sites that require it
-    var frm = $(_config.frameTpl.replace(/%s/, '')).width(700).height(400).appendTo('#player');
-    var doc = frm[0].contentWindow.document;
-    doc.open();
-    doc.close();
-    var vidfrm = $(_config.frameTpl.replace(/%s/, url)).width('96%').height('96%');
-    $("body", doc).append(vidfrm);
+  function getSomeVids() {
+    var vidcount = document.querySelectorAll('.vid').length;
+    if(vidcount >= _filtered.length) return [];
+    return _filtered
+      .slice(vidcount, vidcount + (_config.videoPageLimit||100))
+      .map(function(e,i) {
+        return getVideoElement(e);
+      });
+  }
 
-    //$('#player').html(_config.frameTpl.replace(/%s/, url));
+  function getVideoElement(opts) {
+    var div = $('<div class="vid">');
+    div.data('src', $('select#src').val());
+
+    $.each(opts, function(k,v) {
+      if(k == 'img') div.attr('data-img', v);
+      else if(k == 'imdb') div.attr('data-imdb-id', v);
+      else if(k == 'title') div.append('<span class="title" title="'+v+'">'+v+'</span>');
+      else {
+        // some mods use data props such as: rating, genre, year
+        div.data(k, v);
+      }
+    });
+
+    // let's see if mods like the default
+    // TODO: should probably be public function if there's need for override
+    var ret = $(window).triggerHandler($.Event("getvideoelement"), div);
+    return (ret ? ret : div);
   }
 
   function getVideoInfoHtml(ele) {
-    var srcs = ele.data('srcs').sort(_smc.sortVideoServices);
-    return '<span class="heading">video sources</span><ul id="srcs">'+
+    var srcs = $(ele).data('srcs').sort(_smc.sortVideoServices);
+    return '<h3>'+ $('.title', ele).text() +'</h3>'+
+      '<span class="heading">video sources</span><ul class="srcs">'+
       srcs.map(function(e) {
         return '<li class="button" data-href="'+ e +'">'+ e.split(/\/+/)[1] +'</li>';
       }).join('')+
       '</ul>';
   }
 
+  function getVideoFrame(url) {
+    // HAX: wrapping iframe in iframe we can declare referrer=never on top frame,
+    // use imdb imgs w/o ref and still send referrer to video sites that require it
+    var frm = $(_config.frameTpl.replace(/%s/, ''))
+      .width(700).height(400);
+    frm.load(function() {
+      var doc = frm[0].contentWindow.document;
+      doc.open();
+      doc.close();
+      var vidfrm = $(_config.frameTpl.replace(/%s/, url))
+        .width('96%').height('96%');
+      $("body", doc).append(vidfrm);
+    });
+
+    //$('#player').html(_config.frameTpl.replace(/%s/, url));
+    return frm;
+  }
+
   function showVideo(ele) {
-    // mods might want to get video id from hash, so update that before event
+    if(!trigger("playeropen", ele)) return;
+
     var imdbid = ele.data('imdb-id');
     location.hash = 'vid=' + imdbid;
-    if(!trigger("playeropen", ele)) return;
 
     $('.selected').removeClass('selected');
     $(ele).addClass('selected');
@@ -217,33 +202,30 @@ var _smc = (function(){
 
     // open first video source by default, if nobody stops us
     var srcs = ele.data('srcs').sort(_smc.sortVideoServices);
-    if(trigger("videosrcchange", srcs[0])) openVideoFrame(srcs[0]);
+    if(trigger("videosrcchange", srcs[0])) {
+      $('iframe', '.plrcontainer .player').remove();
+      getVideoFrame(srcs[0]).appendTo($('.plrcontainer .player'));
+    }
+
+    $('.plrcontainer')
+      .data('imdb-id', imdbid)
+      .removeClass('hidden');
 
     $('body').addClass('video-mode');
+    trigger("playeropened", $('.plrcontainer'));
   }
 
   function closePlayer() {
     if(!trigger("playerclose", this)) return;
     $('body').removeClass('video-mode');
-    $('#player iframe').remove();
+    $('.plrcontainer').addClass('hidden');
+    $('.player iframe').remove();
     location.hash = '';
   }
-
-  $(window).on('progressing', function(evt, data) {
-    if(data === "") {
-      $('.loading').addClass('hidden');
-      $('.progresslabel').text("");
-    } else {
-      $('.progresslabel').text(data);
-      $('.loading').removeClass('hidden');
-      //console.log(evt);
-    }
-  });
 
   function applyFilters(namedFilter) {
     var deferred = $.Deferred();
 
-    $('#content .vid').detach();  // GOTCHA, .remove() removes .data() X|
     var srcname = $('select#src').val();
     if(!srcname || !(srcname in _srcs)) return;
 
@@ -255,7 +237,6 @@ var _smc = (function(){
 
       var callerguid = 0;
       if(arguments.callee.caller) callerguid = arguments.callee.caller.guid;
-      $('.filterinfo').text("");
       trigger('progressing', "running filters");
 
       $.each(_filters, function(i,filt) {
@@ -323,69 +304,22 @@ var _smc = (function(){
     trigger("videossorted");
   }
 
+  // clear videos, apply filters, sorter and relist videos
   function refresh() {
     var ds1 = Date.now();
+    $('#content .vid').detach();  // GOTCHA, .remove() removes .data() X|
 
     _smc.applyFilters().then(function() {
-      if(!applySorter($('#sortby').val())) showMoreVideos();
+      applySorter($('#sortby').val());
       console.log("filters+sort:", (Date.now()-ds1)/1000, "sec");
 
       $('.vid').detach();
       showMoreVideos();
       _smc.refreshView();
     });
-
   }
 
-  function addFilter(fn, content, ctxfn) {
-    _filters.push({fn: fn, ctx: ctxfn});
-    if(content) {
-      $('.filters').append(content).show();
-      trigger("optionschange");
-    }
-  }
-
-  function addSorter(name, fn) {
-    _sorters[name] = fn;
-    $('#sortby').append($('<option>').attr('value',name).text(name));
-    trigger("optionschange");
-  }
-
-  function showMoreVideos() {
-    var vids = getSomeVids();
-    $('#content').append(vids);
-    trigger("videoslisted", vids);
-  }
-
-  function getSomeVids() {
-    var vidcount = document.querySelectorAll('.vid').length;
-    if(vidcount >= _filtered.length) return [];
-    return _filtered
-      .slice(vidcount, vidcount + (_config.videoPageLimit||100))
-      .map(function(e,i) {
-        return getVideoElement(e);
-      });
-  }
-
-  function getVideoElement(opts) {
-    var div = $('<div class="vid">');
-    div.data('src', $('select#src').val());
-
-    $.each(opts, function(k,v) {
-      if(k == 'img') div.attr('data-img', v);
-      else if(k == 'imdb') div.attr('data-imdb-id', v);
-      else if(k == 'title') div.append('<span class="title" title="'+v+'">'+v+'</span>');
-      else {
-        // some mods use data props such as: rating, genre, year
-        div.data(k, v);
-      }
-    });
-
-    // let's see if mods like the default
-    var ret = $(window).triggerHandler($.Event("getvideoelement"), div);
-    return (ret ? ret : div);
-  }
-
+  // update UI to reflect the videos listed
   function refreshView() {
     var srcname = $('select#src').val();
     if(srcname && srcname in _srcs) {
@@ -395,10 +329,49 @@ var _smc = (function(){
     $('body').scroll();
   }
 
-  $(window).on('videosload', function() {
+  function showMoreVideos() {
+    var vids = getSomeVids();
+    $('#content').append(vids);
+    trigger("videoslisted", vids);
+  }
+
+  // -- dom events
+
+  $(window).on('progressing', function(evt, data) {
+    if(data === "") {
+      $('.loading').addClass('hidden');
+      $('.progresslabel').text("");
+    } else {
+      $('.progresslabel').text(data);
+      $('.loading').removeClass('hidden');
+      //console.log(evt);
+    }
   });
+
+  $(window).on('modloaded', function(evt, mod) {
+    console.log(mod, "loaded");
+    _modloadcount++;
+  });
+
   $(window).on('videosready', function() {
-    _smc.refresh();
+    function init() {
+      _smc.refresh();
+
+      var srcname = $('select#src').val();
+      if(srcname && location.hash) {
+        $.each(_srcs[srcname], function(i,e) {
+          if(location.hash.indexOf(e.imdb) > 0)
+            showVideo($(getVideoElement(e)));
+        });
+      }
+    }
+
+    if(_modloadcount >= Object.keys(_mods).length) {
+      init();
+    } else {
+      console.log("videos are ready but mods are still loading, waiting a sec");
+      setTimeout(init, 300);
+    }
   });
 
   $(function() {
@@ -426,21 +399,24 @@ var _smc = (function(){
     addSorter('title', sortByTitle);
 
     // -- events
-    $('.info').on('click', '#srcs *[data-href]', function() {
+    $('body').on('click', '.srcs *[data-href]', function() {
       var url = $(this).data('href');
-      if(trigger("videosrcchange", url)) openVideoFrame(url);
+      if(trigger("videosrcchange", url)) {
+        var plr = $(this).closest('.plrcontainer');
+        $('iframe', plr).remove();
+        getVideoFrame(url).appendTo($('.player', plr));
+      }
     });
-    
+
     $('#title').on('input', $.debounce(500, function(e) {
       if(!trigger("search", $('#title').val().replace('"', '\"'))) return;
       _smc.refresh();
     }));
 
-    $('#revsort').change(function() {
+    $('#revsort, #sortby').change(function() {
       _smc.applySorter($('#sortby').val());
-    });
-    $('#sortby').change(function() {
-      _smc.applySorter($(this).val());
+      $('.vid').detach();
+      refreshView();
     });
     $('#reverse').change(function() {
       _smc.refresh();
@@ -459,7 +435,8 @@ var _smc = (function(){
       }, 10);
     });
 
-    $('#close').on('click', closePlayer);
+    $('body').on('click', '.plrcontainer button.close', closePlayer);
+
     $(window).on('hashchange', function() {
       if(!location.hash) closePlayer();
     });
@@ -504,6 +481,7 @@ var _smc = (function(){
     getConfig: function() { return _config; },
     getMods: function() { return _mods; },
     getVersion: function() { return _version; },
+    getVideoFrame: getVideoFrame,
     getVideoInfoHtml: getVideoInfoHtml,
     loadScript: loadScript,
     showVideo: showVideo,

@@ -4,7 +4,7 @@ html, body {
   font-family: sans-serif;
 }
 
-.hidden { display: none; }
+.hidden { display: none !important; }
 .selected { background-color: #f66 !important; }
 
 .loading {
@@ -129,47 +129,39 @@ label { color: white; font-size: small; }
   margin-top: 32px;
 }
 
-#plrcontainer button {
-  background-color: black;
-  color: gray;
-}
-#close {
-  position: absolute;
-  right: 0;
-  top: 0;
-  margin: 5px;
-}
-#plrcontainer, #bglayer {
+.fullscreen {
   width: 100%;
   height: 100%;
   position: fixed;
   left: 0;
   top: 0;
-  display: none;
 }
-#bglayer {
-  z-index: 90;
-  opacity: .8;
-  background-color: black;
-}
-#plrcontainer {
+
+.plrcontainer {
   z-index: 99;
   justify-content: center;
   align-items: center;
+  display: flex;
+  background-color: rgba(0,0,0, .8);
 }
 
-body.video-mode #plrcontainer {
-  display: flex;
+.plrcontainer button {
+  background-color: black;
+  color: gray;
+  margin: 5px;
+  float: right;
+  position: absolute;
+  right: 0;
 }
-body.video-mode #bglayer {
-  display: block;
+button.close {
+  top: 0;
 }
 
 .info {
   color: wheat;
   width: 250px;
   word-wrap: break-word;
-  margin: 30px;
+  margin: 3px;
 }
 .info ul {
   padding: 0;
@@ -182,7 +174,7 @@ body.video-mode #bglayer {
   font-size: small;
 }
 
-#srcs a {
+.srcs a {
   cursor: pointer;
 }
 
