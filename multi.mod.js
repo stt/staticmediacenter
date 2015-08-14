@@ -1,6 +1,8 @@
 (function() {
     var reloffset;
 
+    var is_firefox = navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+
     function getEventPos(ev) {
         var x = 0, y = 0;
         if("targetTouches" in ev) {
@@ -17,6 +19,10 @@
     }
 
     function dragstart(ev) {
+        // firefox requires setData
+        ev.originalEvent.dataTransfer.setData('imdbId', $(this).data('imdb-id'));
+        ev.originalEvent.dataTransfer.effectAllowed = 'move';
+
         var maxZIndex = Math.max.apply(null, 
             $('.plrcontainer').map(function(i,e) {
                 return $(e).css('z-index');
@@ -26,7 +32,7 @@
 
         $('body').addClass('dragging');
         if("targetTouches" in ev.originalEvent) {
-        } else {
+        } else if(!is_firefox) {
             var img = document.createElement("img");
             img.src = 'data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==';
             ev.originalEvent.dataTransfer.setDragImage(img, 0, 0);
@@ -71,18 +77,40 @@
       }
     }));
 
-
     $(window).on('playeropen', function(ev, ele) {
         ev.preventDefault();
 
         var imdbid = $(ele).data('imdb-id');
         var hash = getHash();
         if(!hash.vids || hash.vids.indexOf(imdbid) < 0) {
-            hash.vids = ('vids' in hash ? hash.vids + '|' : '') + imdbid;
+            var vids = ('vids' in hash ? hash.vids.split('|') : []);
+            vids.push(imdbid);
+            hash.vids = vids.join('|');
             setHash(hash);
         }
 
         var plrcount = $('.plrcontainer').length;
+        var pos;
+
+        if(is_firefox) {
+            $('body')
+            .on('dragover', function(ev) { return false; })
+            .on('drop', function(ev) {
+                var imdbId = ev.originalEvent.dataTransfer.getData('imdbId');
+                var plr = $('.plrcontainer[data-imdb-id="'+ imdbId +'"]');
+                move.call(plr, ev);
+            });
+        }
+
+        function move(ev) {
+                ev.preventDefault();
+                pos = getEventPos(ev.originalEvent);
+                if(pos) {
+                    var left = pos.x - reloffset.x;
+                    var top = pos.y - reloffset.y;
+                    $(this).offset({left: left, top: top});
+                }
+        }
 
         var container = $(
             '<div draggable="true" ondragover="event.preventDefault();">'+
@@ -94,24 +122,18 @@
             '  <div class="corner right bottom"></div>'+
             '</div>')
             .addClass('plrcontainer')
-            .data('imdb-id', imdbid)
+            .attr('data-imdb-id', imdbid)
             .css({position: 'fixed', padding: '5px', left: 20*plrcount, top: 40*plrcount})
             .on('dragstart', dragstart)
-            .on('drag', function(ev) {
-                ev.preventDefault();
-                var pos = getEventPos(ev.originalEvent);
-                if(pos) {
-                    var left = pos.x - reloffset.x;
-                    var top = pos.y - reloffset.y;
-                    $(this).offset({left: left, top: top});
-                }
-            })
+            .on('drag touchmove', move)
             .on('dragend', function(ev) {
                 $('body').removeClass('dragging');
             })
             .appendTo('body');
 
         $('.info', container).html(_smc.getVideoInfoHtml(ele));
+
+        document.title = $('.title', ele).text();
 
         var srcs = $(ele).data('srcs').sort(_smc.sortVideoServices);
         _smc.getVideoFrame(srcs[0]).appendTo($('.player', container));
