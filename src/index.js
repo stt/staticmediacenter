@@ -113,6 +113,13 @@ var _smc = (function(){
     if(src && !$('select#src').has('option[value='+src+']').length) {
       $('select#src').append($('<option>').attr('value',src).text(src));
       if(!(src in _srcs)) _srcs[src] = [];
+
+      var hash = getHash();
+      if('src' in hash && hash.src == src) {
+        $('select#src').val(src);
+        trigger("srcchange", src);
+      }
+
       trigger("optionschange");
     }
   }
@@ -131,11 +138,17 @@ var _smc = (function(){
   function getSomeVids() {
     var vidcount = document.querySelectorAll('.vid').length;
     if(vidcount >= _filtered.length) return [];
-    return _filtered
-      .slice(vidcount, vidcount + (_config.videoPageLimit||100))
-      .map(function(e,i) {
-        return getVideoElement(e);
-      });
+    var shown = $.map($('.vid'), function(e) { return e.dataset.imdbId });
+    var matched = 0;
+    return _filtered.filter(function(e) {
+      if(matched >= (_config.videoPageLimit||100)) return false;
+      if(shown.indexOf(e.imdb) >= 0) return false;
+      matched++;
+      return true;
+    })
+    .map(function(e,i) {
+      return getVideoElement(e);
+    });
   }
 
   function getVideoElement(opts) {
@@ -390,12 +403,6 @@ var _smc = (function(){
       }
     );
 
-    // KNOWN ISSUE:
-    // Remember mod is tied to optionschange, if default sorter is
-    // added before remember is listening then #src is not selected
-    // and user has to select manually.
-    // This doesn't happen on chrome but does happen on firefox, though
-    // less frequently if addSorter is registered on document.ready
     addSorter('title', sortByTitle);
 
     // -- events
@@ -427,6 +434,9 @@ var _smc = (function(){
       // queue the event that launches src loading, so
       // our dom update becomes visible first
       var src = this.value;
+      var hash = getHash();
+      hash.src = src;
+      setHash(hash);
       setTimeout(function() {
         var d1 = Date.now();
         trigger("srcchange", src);

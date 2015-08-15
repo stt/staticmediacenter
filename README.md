@@ -28,3 +28,10 @@ vttlivecomms.mod.js | Asks [vttlive chrome extension](https://chrome.google.com/
 After `git clone` run `grunt`. It combines css and js files from `src/` to `index.html`, copy that file along with chosen modules to a chosen host.
 
 Notice that if you open the media library to browser directly from local disk some videostreaming services might not work as they e.g. might require a Referrer header that wouldn't be present, so prefer using over http.
+
+## Known issues
+
+* multi.mod.js: due to mouse coordinate issues dragging players is implemented differently in Firefox and Chrome
+* filter.mod.js: reversing filters is not very useful, e.g. excluding a genre by selecting one genre and reverse causes "hide seen" filter to also reverse and show seen movies, TODO: allow reversing of individual filters
+* remember.mod.js: restoring options is tied to optionschange event, which might be missed if remember.mod.js ends up loading last (meaning that src from previous use might not be selected and videos are not listed until user selects a src)
+
